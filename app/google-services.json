@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "88939865596",
+    "project_id": "fun-date-bd1ae",
+    "storage_bucket": "fun-date-bd1ae.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:88939865596:android:af85d3c6b5f575d9aa3e79",
+        "android_client_info": {
+          "package_name": "com.example.fundate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVARyaRar4CkKg4KrFHFgM4EN1LpD5yQ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
