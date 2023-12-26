@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.fundate.MainActivity
 import com.example.fundate.R
 import com.example.fundate.databinding.ActivityLogInBinding
+import com.example.fundate.model.UserModel
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseException
@@ -24,6 +26,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.database
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.TimeUnit
 
@@ -120,24 +124,34 @@ class LogInActivity : AppCompatActivity() {
     @SuppressLint("SetTextI18n")
     private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
         auth.signInWithCredential(credential).addOnCompleteListener(this) { task ->
-                binding.verifyOtp.text = "Verify"
-                binding.verifyOtp.isClickable = true
-                if (task.isSuccessful) {
-                    checkUserExist(binding.userNumber.text.toString())
-                } else {
-                    dialog.dismiss()
-                    Toast.makeText(this@LogInActivity, task.exception!!.message, Toast.LENGTH_SHORT)
-                        .show()
-                }
+            binding.verifyOtp.text = "Verify"
+            binding.verifyOtp.isClickable = true
+            if (task.isSuccessful) {
+                checkUserExist(binding.userNumber.text.toString())
+            } else {
+                dialog.dismiss()
+                Toast.makeText(this@LogInActivity, task.exception!!.message, Toast.LENGTH_SHORT)
+                    .show()
             }
+        }
     }
 
     private fun checkUserExist(number: String) {
-        FirebaseDatabase.getInstance().getReference("users").child("+91$number")
-            .addValueEventListener(object : ValueEventListener {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                return@OnCompleteListener
+            }
+            val token = task.result
+            val userRef = FirebaseDatabase.getInstance().getReference("users").child("+91$number")
+            userRef.addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     dialog.dismiss()
                     if (snapshot.exists()) {
+                        userRef.get().addOnSuccessListener {
+                            val user = it.getValue(UserModel::class.java)
+                            val updatedUser = user!!.copy(fcmToken = token)
+                            userRef.setValue(updatedUser)
+                        }
                         startActivity(Intent(this@LogInActivity, MainActivity::class.java))
                         finish()
                     } else {
@@ -152,5 +166,6 @@ class LogInActivity : AppCompatActivity() {
                 }
 
             })
+        })
     }
 }

@@ -45,11 +45,16 @@ class DatingFragment : Fragment() {
         database = Firebase.database
         auth = Firebase.auth
 
-        getData();
+//        getData();
 
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        getData()
+    }
+    
     private fun init() {
         manager = CardStackLayoutManager(requireContext(), object : CardStackListener {
             override fun onCardDragging(direction: Direction?, ratio: Float) {
@@ -80,6 +85,7 @@ class DatingFragment : Fragment() {
         manager.setScaleInterval(0.8f)
         manager.setMaxDegree(20.0f)
         manager.setDirections(listOf(Left))
+
     }
 
     private fun getData() {

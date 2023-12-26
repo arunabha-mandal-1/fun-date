@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContract
@@ -15,6 +16,7 @@ import com.example.fundate.R
 import com.example.fundate.databinding.ActivityLogInBinding
 import com.example.fundate.databinding.ActivityRegisterBinding
 import com.example.fundate.model.UserModel
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.Firebase
@@ -23,6 +25,7 @@ import com.google.firebase.auth.auth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.database
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.storage
 import kotlinx.coroutines.CoroutineScope
@@ -105,28 +108,43 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun storeData(imageUri: Uri?) {
-        val data = UserModel(
-            name = binding.userName.text.toString(),
-            email = binding.userEmail.text.toString(),
-            city = binding.userLocation.text.toString(),
-            image = imageUri.toString(),
-            number = auth.currentUser?.phoneNumber.toString()
-        )
-        database.getReference("users")
-            .child(auth.currentUser!!.phoneNumber!!)
-            .setValue(data)
-            .addOnCompleteListener {
-                dialog.dismiss()
-                if (it.isSuccessful) {
-                    val intent = Intent(this, MainActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                    startActivity(intent)
-                    Toast.makeText(this@RegisterActivity, "Registration successful!!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, it.exception!!.message, Toast.LENGTH_SHORT).show()
-                    dialog.dismiss()
-                }
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                return@OnCompleteListener
             }
+
+            // Get new FCM registration token
+            val token = task.result
+
+            val data = UserModel(
+                name = binding.userName.text.toString(),
+                email = binding.userEmail.text.toString(),
+                city = binding.userLocation.text.toString(),
+                image = imageUri.toString(),
+                number = auth.currentUser?.phoneNumber.toString(),
+                fcmToken = token
+            )
+            database.getReference("users")
+                .child(auth.currentUser!!.phoneNumber!!)
+                .setValue(data)
+                .addOnCompleteListener {
+                    dialog.dismiss()
+                    if (it.isSuccessful) {
+                        val intent = Intent(this, MainActivity::class.java)
+                        intent.flags =
+                            Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                        startActivity(intent)
+                        Toast.makeText(
+                            this@RegisterActivity,
+                            "Registration successful!!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(this, it.exception!!.message, Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                    }
+                }
+        })
     }
 }
 
