@@ -1,10 +1,10 @@
 package com.example.fundate.auth
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
+import android.content.SharedPreferences
 import android.os.Bundle
-import android.util.Log
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.widget.Toast
@@ -26,9 +26,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.database
 import com.google.firebase.messaging.FirebaseMessaging
-import kotlinx.coroutines.runBlocking
 import java.util.concurrent.TimeUnit
 
 class LogInActivity : AppCompatActivity() {
@@ -36,12 +34,17 @@ class LogInActivity : AppCompatActivity() {
     private lateinit var dialog: AlertDialog
     val auth = Firebase.auth
     private var verificationID: String? = null
+    private lateinit var sharedPref: SharedPreferences
+    private lateinit var editor: SharedPreferences.Editor
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLogInBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        sharedPref = getSharedPreferences("myPref", Context.MODE_PRIVATE)
+        editor = sharedPref.edit()
 
         dialog = MaterialAlertDialogBuilder(this)
             .setView(R.layout.loading_layout)
@@ -127,6 +130,10 @@ class LogInActivity : AppCompatActivity() {
             binding.verifyOtp.text = "Verify"
             binding.verifyOtp.isClickable = true
             if (task.isSuccessful) {
+                editor.apply {
+                    putBoolean("isRegistered", false)
+                    apply()
+                }
                 checkUserExist(binding.userNumber.text.toString())
             } else {
                 dialog.dismiss()
@@ -151,6 +158,10 @@ class LogInActivity : AppCompatActivity() {
                             val user = it.getValue(UserModel::class.java)
                             val updatedUser = user!!.copy(fcmToken = token)
                             userRef.setValue(updatedUser)
+                        }
+                        editor.apply {
+                            putBoolean("isRegistered", true)
+                            apply()
                         }
                         startActivity(Intent(this@LogInActivity, MainActivity::class.java))
                         finish()

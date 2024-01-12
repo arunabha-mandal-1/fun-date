@@ -1,6 +1,8 @@
 package com.example.fundate.auth
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -44,11 +46,16 @@ class RegisterActivity : AppCompatActivity() {
         imageUri = it
         binding.cvUploadImage.setImageURI(imageUri)
     }
+    private lateinit var sharedPref: SharedPreferences
+    private lateinit var editor: SharedPreferences.Editor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        sharedPref = getSharedPreferences("myPref", Context.MODE_PRIVATE)
+        editor = sharedPref.edit()
 
         auth = Firebase.auth
         database = Firebase.database
@@ -130,9 +137,12 @@ class RegisterActivity : AppCompatActivity() {
                 .addOnCompleteListener {
                     dialog.dismiss()
                     if (it.isSuccessful) {
+                        editor.apply {
+                            putBoolean("isRegistered", true)
+                            apply()
+                        }
                         val intent = Intent(this, MainActivity::class.java)
-                        intent.flags =
-                            Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
                         startActivity(intent)
                         Toast.makeText(
                             this@RegisterActivity,
